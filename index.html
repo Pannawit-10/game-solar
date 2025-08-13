@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>นักสำรวจระบบสุริยะ - Solar System Explorer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            overflow: hidden;
+            color: white;
+        }
+        
+        /* Start Screen Styles */
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 1s ease-in;
+        }
+        
+        .start-screen.hidden {
+            display: none;
+        }
+        
+        .title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #4a90e2, #e74c3c, #f39c12);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin-bottom: 1rem;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            color: #bdc3c7;
+            text-align: center;
+            margin-bottom: 3rem;
+            opacity: 0.8;
+        }
+        
+        .view-modes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin-bottom: 3rem;
+        }
+        
+        .view-mode {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .view-mode:hover {
+            border-color: #4a90e2;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(74, 144, 226, 0.3);
+        }
+        
+        .view-mode.selected {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.2);
+        }
+        
+        .view-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .view-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #ecf0f1;
+        }
+        
+        .view-description {
+            font-size: 0.9rem;
+            color: #bdc3c7;
+            line-height: 1.4;
+        }
+        
+        .start-button {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Kanit', sans-serif;
+            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.4);
+        }
+        
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.6);
+        }
+        
+        .start-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(74, 144, 226, 0.5); }
+            to { text-shadow: 0 0 30px rgba(231, 76, 60, 0.8); }
+        }
+        
+        /* Game Canvas */
+        #gameCanvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .controls-panel {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #4a90e2;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+            max-width: 280px;
+            z-index: 101;
+        }
+        
+        .controls-panel h3 {
+            color: #4a90e2;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        
+        .control-key {
+            background: #4a90e2;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 11px;
+        }
+        
+        .info-panel {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e74c3c;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+            min-width: 320px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 101;
+        }
+        
+        .info-panel h3 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .planet-info {
+            margin-bottom: 15px;
+        }
+        
+        .planet-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f39c12;
+            margin-bottom: 8px;
+        }
+        
+        .planet-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .planet-detail .label {
+            color: #bdc3c7;
+        }
+        
+        .planet-detail .value {
+            color: #ecf0f1;
+            font-weight: 500;
+        }
+        
+        .status-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #34495e;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            z-index: 100;
+        }
+        
+        .status-item {
+            text-align: center;
+            min-width: 100px;
+        }
+        
+        .status-label {
+            font-size: 12px;
+            color: #bdc3c7;
+            margin-bottom: 5px;
+        }
+        
+        .status-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2ecc71;
+        }
+        
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+        }
+        
+        .crosshair::before,
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+        }
+        
+        .crosshair::before {
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            transform: translateY(-50%);
+        }
+        
+        .crosshair::after {
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            transform: translateX(-50%);
+        }
+        
+        .view-controls {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #f39c12;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+            display: flex;
+            gap: 8px;
+            z-index: 103;
+        }
+        
+        .view-button {
+            background: rgba(243, 156, 18, 0.2);
+            border: 1px solid #f39c12;
+            color: #f39c12;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Kanit', sans-serif;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        
+        .view-button:hover {
+            background: rgba(243, 156, 18, 0.4);
+        }
+        
+        .view-button.active {
+            background: #f39c12;
+            color: #0c0c0c;
+        }
+        
+        .home-button {
+            background: rgba(231, 76, 60, 0.2) !important;
+            border-color: #e74c3c !important;
+            color: #e74c3c !important;
+        }
+        
+        .home-button:hover {
+            background: rgba(231, 76, 60, 0.4) !important;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .creator-panel {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #9b59b6;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+            width: 340px;
+            max-height: 75vh;
+            overflow-y: auto;
+            z-index: 102;
+        }
+        
+        .creator-panel h3 {
+            color: #9b59b6;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .creator-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(155, 89, 182, 0.3);
+        }
+        
+        .creator-section:last-child {
+            border-bottom: none;
+        }
+        
+        .creator-section h4 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            color: #bdc3c7;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #34495e;
+            border-radius: 5px;
+            background: rgba(52, 73, 94, 0.3);
+            color: white;
+            font-family: 'Kanit', sans-serif;
+        }
+        
+        .input-group input[type="color"] {
+            width: 50px;
+            height: 35px;
+            border: 1px solid #34495e;
+            border-radius: 5px;
+            background: transparent;
+            cursor: pointer;
+        }
+        
+        .input-group input[type="range"] {
+            width: 70%;
+            margin-right: 10px;
+        }
+        
+        .input-group span {
+            color: #f39c12;
+            font-weight: 600;
+            min-width: 50px;
+            display: inline-block;
+        }
+        
+        .creator-button {
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Kanit', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .creator-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4);
+        }
+        
+        .creator-button.danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        
+        .creator-button.danger:hover {
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        
+        .planet-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        
+        .planet-item {
+            background: rgba(52, 73, 94, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .planet-item-info {
+            flex: 1;
+        }
+        
+        .planet-item-name {
+            color: #ecf0f1;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        
+        .planet-item-details {
+            color: #bdc3c7;
+            font-size: 12px;
+        }
+        
+        .planet-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .planet-item-btn {
+            background: rgba(231, 76, 60, 0.8);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .planet-item-btn:hover {
+            background: #e74c3c;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        .pulsing {
+            animation: pulse 2s infinite;
+        }
+        
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .view-modes {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .controls-panel {
+                top: 70px;
+                right: 10px;
+                max-width: 200px;
+                padding: 10px;
+            }
+            
+            .info-panel {
+                top: 70px;
+                left: 10px;
+                min-width: 280px;
+                max-height: 350px;
+                padding: 12px;
+            }
+            
+            .creator-panel {
+                top: 70px;
+                right: 10px;
+                width: 300px;
+                max-height: 65vh;
+                padding: 12px;
+            }
+            
+            .view-controls {
+                top: 15px;
+                gap: 5px;
+                padding: 8px;
+            }
+            
+            .view-button {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 5px;
+                padding: 8px;
+                left: 10px;
+                right: 10px;
+            }
+            
+            .status-item {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div class="start-screen" id="startScreen">
+        <h1 class="title">🌌 นักสำรวจระบบสุริยะ</h1>
+        <p class="subtitle">สำรวจความมหัศจรรย์ของจักรวาลในโลก 3 มิติ</p>
+        
+        <div class="view-modes">
+            <div class="view-mode" data-mode="explorer">
+                <div class="view-icon">🚀</div>
+                <div class="view-title">โหมดสำรวจอิสระ</div>
+                <div class="view-description">บินไปรอบๆ ระบบสุริยะด้วยตัวเอง ควบคุมการเคลื่อนที่และมุมมองได้อย่างอิสระ</div>
+            </div>
+            
+            <div class="view-mode" data-mode="guided">
+                <div class="view-icon">🎯</div>
+                <div class="view-title">โหมดทัวร์นำเที่ยว</div>
+                <div class="view-description">เยี่ยมชมดาวเคราะห์แต่ละดวงตามลำดับ พร้อมข้อมูลทางวิทยาศาสตร์</div>
+            </div>
+            
+            <div class="view-mode" data-mode="orbit">
+                <div class="view-icon">🌍</div>
+                <div class="view-title">โหมดติดตามวงโคจร</div>
+                <div class="view-description">ติดตามการเคลื่อนที่ของดาวเคราะห์ในวงโคจรแบบเรียลไทม์</div>
+            </div>
+            
+            <div class="view-mode" data-mode="comparison">
+                <div class="view-icon">⚖️</div>
+                <div class="view-title">โหมดเปรียบเทียบ</div>
+                <div class="view-description">เปรียบเทียบขนาดและคุณสมบัติของดาวเคราะห์แต่ละดวง</div>
+            </div>
+            
+            <div class="view-mode" data-mode="creator">
+                <div class="view-icon">🎨</div>
+                <div class="view-title">โหมดสร้างระบบสุริยะ</div>
+                <div class="view-description">สร้างระบบสุริยะของคุณเอง เพิ่มดาวเคราะห์และปรับแต่งคุณสมบัติ</div>
+            </div>
+        </div>
+        
+        <button class="start-button" id="startButton" disabled>เริ่มการสำรวจ</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="ui-overlay">
+        <div class="view-controls" id="viewControls">
+            <button class="view-button home-button" id="homeButton">🏠 หน้าหลัก</button>
+            <button class="view-button active" data-view="free">มุมมองอิสระ</button>
+            <button class="view-button" data-view="top">มุมมองด้านบน</button>
+            <button class="view-button" data-view="side">มุมมองด้านข้าง</button>
+            <button class="view-button" data-view="follow">ติดตามเป้าหมาย</button>
+        </div>
+        
+        <div class="controls-panel">
+            <h3>🎮 การควบคุม</h3>
+            <div class="control-item">
+                <span>เคลื่อนที่</span>
+                <span class="control-key">WASD</span>
+            </div>
+            <div class="control-item">
+                <span>หมุนกล้อง</span>
+                <span class="control-key">เมาส์</span>
+            </div>
+            <div class="control-item">
+                <span>ซูมเข้า/ออก</span>
+                <span class="control-key">↑↓</span>
+            </div>
+            <div class="control-item">
+                <span>เปลี่ยนเป้าหมาย</span>
+                <span class="control-key">TAB</span>
+            </div>
+            <div class="control-item">
+                <span>ข้อมูลเพิ่มเติม</span>
+                <span class="control-key">SPACE</span>
+            </div>
+            <div class="control-item">
+                <span>รีเซ็ตตำแหน่ง</span>
+                <span class="control-key">R</span>
+            </div>
+        </div>
+        
+        <div class="info-panel" id="infoPanel">
+            <h3>🌌 ข้อมูลระบบสุริยะ</h3>
+            <div id="planetInfo">
+                <div class="planet-info">
+                    <div class="planet-name">☀️ ดวงอาทิตย์ (Sun)</div>
+                    <div class="planet-detail">
+                        <span class="label">รัศมี:</span>
+                        <span class="value">696,340 กม.</span>
+                    </div>
+                    <div class="planet-detail">
+                        <span class="label">อุณหภูมิพื้นผิว:</span>
+                        <span class="value">5,778 K</span>
+                    </div>
+                    <div class="planet-detail">
+                        <span class="label">มวล:</span>
+                        <span class="value">1.989 × 10³⁰ กก.</span>
+                    </div>
+                    <div class="planet-detail">
+                        <span class="label">ประเภท:</span>
+                        <span class="value">ดาวฤกษ์แคระเหลือง</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-label">ตำแหน่ง X</div>
+                <div class="status-value" id="posX">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">ตำแหน่ง Y</div>
+                <div class="status-value" id="posY">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">ตำแหน่ง Z</div>
+                <div class="status-value" id="posZ">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">ความเร็ว</div>
+                <div class="status-value" id="velocity">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">ระยะทางจากเป้าหมาย</div>
+                <div class="status-value" id="distance">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">เป้าหมายปัจจุบัน</div>
+                <div class="status-value" id="currentTarget">ดวงอาทิตย์</div>
+            </div>
+        </div>
+        
+        <div class="crosshair"></div>
+        
+        <!-- Guided Tour Panel -->
+        <div class="creator-panel hidden" id="guidedPanel">
+            <h3>🎯 โหมดทัวร์นำเที่ยว</h3>
+            
+            <div class="creator-section">
+                <h4>การควบคุมทัวร์</h4>
+                <button class="creator-button" id="tourPlayPause">⏸️ หยุดชั่วคราว</button>
+                <button class="creator-button" id="tourNext">⏭️ ถัดไป</button>
+                <button class="creator-button" id="tourPrev">⏮️ ก่อนหน้า</button>
+                <button class="creator-button" id="tourRestart">🔄 เริ่มใหม่</button>
+                
+                <div class="input-group">
+                    <label>ความเร็วทัวร์:</label>
+                    <input type="range" id="tourSpeedSlider" min="1000" max="8000" value="3000">
+                    <span id="tourSpeedValue">3.0s</span>
+                </div>
+            </div>
+            
+            <div class="creator-section">
+                <h4>ความคืบหน้า</h4>
+                <div id="tourProgress">
+                    <div style="color: #f39c12; margin-bottom: 10px;">
+                        ดาวเคราะห์ที่ <span id="tourCurrentIndex">1</span> จาก <span id="tourTotalPlanets">10</span>
+                    </div>
+                    <div style="background: rgba(52, 73, 94, 0.5); height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div id="tourProgressBar" style="background: #e74c3c; height: 100%; width: 10%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Orbit Tracking Panel -->
+        <div class="creator-panel hidden" id="orbitPanel">
+            <h3>🌍 โหมดติดตามวงโคจร</h3>
+            
+            <div class="creator-section">
+                <h4>การควบคุมเวลา</h4>
+                <div class="input-group">
+                    <label>ความเร็วเวลา:</label>
+                    <input type="range" id="orbitSpeedSlider" min="0.1" max="5" step="0.1" value="1">
+                    <span id="orbitSpeedValue">1.0x</span>
+                </div>
+                <button class="creator-button" id="orbitPause">⏸️ หยุด</button>
+                <button class="creator-button" id="orbitReset">🔄 รีเซ็ต</button>
+            </div>
+            
+            <div class="creator-section">
+                <h4>มุมมอง</h4>
+                <button class="creator-button" id="orbitViewTop">📐 ด้านบน</button>
+                <button class="creator-button" id="orbitViewSide">📏 ด้านข้าง</button>
+                <button class="creator-button" id="orbitView3D">🎯 3D</button>
+                
+                <div class="input-group">
+                    <label>
+                        <input type="checkbox" id="showOrbitalPaths" checked> แสดงเส้นวงโคจร
+                    </label>
+                </div>
+            </div>
+            
+            <div class="creator-section">
+                <h4>ติดตามดาวเคราะห์</h4>
+                <select id="orbitFocusSelect" style="width: 100%; padding: 8px; background: rgba(52, 73, 94, 0.3); color: white; border: 1px solid #34495e; border-radius: 5px;">
+                    <option value="system">ระบบทั้งหมด</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Comparison Panel -->
+        <div class="creator-panel hidden" id="comparisonPanel">
+            <h3>⚖️ โหมดเปรียบเทียบ</h3>
+            
+            <div class="creator-section">
+                <h4>เลือกดาวเคราะห์</h4>
+                <div class="input-group">
+                    <label>ดาวเคราะห์ที่ 1:</label>
+                    <select id="comparison1Select" style="width: 100%; padding: 8px; background: rgba(52, 73, 94, 0.3); color: white; border: 1px solid #34495e; border-radius: 5px;">
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>ดาวเคราะห์ที่ 2:</label>
+                    <select id="comparison2Select" style="width: 100%; padding: 8px; background: rgba(52, 73, 94, 0.3); color: white; border: 1px solid #34495e; border-radius: 5px;">
+                    </select>
+                </div>
+            </div>
+            
+            <div class="creator-section">
+                <h4>การแสดงผล</h4>
+                <div class="input-group">
+                    <label>
+                        <input type="checkbox" id="showRealSizes"> แสดงขนาดจริง
+                    </label>
+                </div>
+                <div class="input-group">
+                    <label>ระดับการซูม:</label>
+                    <input type="range" id="comparisonZoom" min="0.5" max="3" step="0.1" value="1.5">
+                    <span id="comparisonZoomValue">1.5x</span>
+                </div>
+            </div>
+            
+            <div class="creator-section">
+                <h4>ข้อมูลเปรียบเทียบ</h4>
+                <div id="comparisonData">
+                    <!-- Comparison data will be populated here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Creator Mode Panel -->
+        <div class="creator-panel hidden" id="creatorPanel">
+            <h3>🎨 สร้างระบบสุริยะ</h3>
+            
+            <div class="creator-section">
+                <h4>เพิ่มดาวเคราะห์ใหม่</h4>
+                <div class="input-group">
+                    <label>ชื่อ:</label>
+                    <input type="text" id="planetName" placeholder="ชื่อดาวเคราะห์">
+                </div>
+                <div class="input-group">
+                    <label>สี:</label>
+                    <input type="color" id="planetColor" value="#4a90e2">
+                </div>
+                <div class="input-group">
+                    <label>ขนาด:</label>
+                    <input type="range" id="planetSize" min="5" max="50" value="20">
+                    <span id="sizeValue">20</span>
+                </div>
+                <div class="input-group">
+                    <label>ระยะจากดวงอาทิตย์:</label>
+                    <input type="range" id="planetDistance" min="100" max="800" value="300">
+                    <span id="distanceValue">300</span>
+                </div>
+                <div class="input-group">
+                    <label>ความเร็วโคจร:</label>
+                    <input type="range" id="planetSpeed" min="0.005" max="0.05" step="0.005" value="0.02">
+                    <span id="speedValue">0.02</span>
+                </div>
+                <button class="creator-button" id="addPlanetBtn">เพิ่มดาวเคราะห์</button>
+            </div>
+            
+            <div class="creator-section">
+                <h4>จัดการดาวเคราะห์</h4>
+                <div class="planet-list" id="planetList">
+                    <!-- Planet list will be populated here -->
+                </div>
+                <button class="creator-button danger" id="clearAllBtn">ลบทั้งหมด</button>
+                <button class="creator-button" id="saveSystemBtn">บันทึกระบบ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SolarSystemExplorer {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.setupCanvas();
+                
+                // Game mode and view settings
+                this.gameMode = 'explorer';
+                this.viewMode = 'free';
+                
+                // Camera properties
+                this.camera = {
+                    x: 0,
+                    y: 0,
+                    z: 1000,
+                    rotX: 0,
+                    rotY: 0,
+                    zoom: 1
+                };
+                
+                // Player movement
+                this.velocity = { x: 0, y: 0, z: 0 };
+                this.keys = {};
+                this.mouseX = 0;
+                this.mouseY = 0;
+                this.isMouseDown = false;
+                
+                // Celestial bodies
+                this.bodies = this.initializeBodies();
+                this.currentTarget = 0;
+                this.time = 0;
+                
+                // Physics constants
+                this.G = 6.67430e-11;
+                this.AU = 149597870.7;
+                
+                this.setupEventListeners();
+                this.setupStartScreen();
+            }
+            
+            setupCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+            
+            setupStartScreen() {
+                const viewModes = document.querySelectorAll('.view-mode');
+                const startButton = document.getElementById('startButton');
+                
+                viewModes.forEach(mode => {
+                    mode.addEventListener('click', () => {
+                        viewModes.forEach(m => m.classList.remove('selected'));
+                        mode.classList.add('selected');
+                        this.gameMode = mode.dataset.mode;
+                        startButton.disabled = false;
+                    });
+                });
+                
+                startButton.addEventListener('click', () => {
+                    document.getElementById('startScreen').classList.add('hidden');
+                    this.initializeGameMode();
+                    this.gameLoop();
+                });
+            }
+            
+            initializeGameMode() {
+                switch(this.gameMode) {
+                    case 'explorer':
+                        this.camera.z = 1000;
+                        this.setupExplorerMode();
+                        break;
+                    case 'guided':
+                        this.setupGuidedTourMode();
+                        break;
+                    case 'orbit':
+                        this.setupOrbitMode();
+                        break;
+                    case 'comparison':
+                        this.setupComparisonMode();
+                        break;
+                    case 'creator':
+                        this.setupCreatorMode();
+                        break;
+                }
+            }
+            
+            initializeBodies() {
+                return [
+                    {
+                        name: 'ดวงอาทิตย์',
+                        nameEn: 'Sun',
+                        emoji: '☀️',
+                        x: 0, y: 0, z: 0,
+                        radius: 50,
+                        color: '#FDB813',
+                        mass: 1.989e30,
+                        orbitalRadius: 0,
+                        orbitalSpeed: 0,
+                        angle: 0,
+                        info: {
+                            radius: '696,340 กม.',
+                            distance: '0 กม.',
+                            speed: '0 กม./วิ',
+                            gravity: '274 ม./วิ²',
+                            description: 'ดาวฤกษ์ใจกลางระบบสุริยะ แหล่งพลังงานแสงและความร้อน'
+                        }
+                    },
+                    {
+                        name: 'ดาวพุธ',
+                        nameEn: 'Mercury',
+                        emoji: '☿️',
+                        x: 80, y: 0, z: 0,
+                        radius: 12,
+                        color: '#8C7853',
+                        mass: 3.301e23,
+                        orbitalRadius: 80,
+                        orbitalSpeed: 0.04,
+                        angle: 0,
+                        info: {
+                            radius: '2,440 กม.',
+                            distance: '57.9 ล้านกม.',
+                            speed: '47.87 กม./วิ',
+                            gravity: '3.7 ม./วิ²',
+                            description: 'ดาวเคราะห์ที่ใกล้ดวงอาทิตย์ที่สุด มีอุณหภูมิสูงมากในตอนกลางวัน'
+                        }
+                    },
+                    {
+                        name: 'ดาวศุกร์',
+                        nameEn: 'Venus',
+                        emoji: '♀️',
+                        x: 120, y: 0, z: 0,
+                        radius: 18,
+                        color: '#FFC649',
+                        mass: 4.867e24,
+                        orbitalRadius: 120,
+                        orbitalSpeed: 0.035,
+                        angle: Math.PI/4,
+                        info: {
+                            radius: '6,052 กม.',
+                            distance: '108.2 ล้านกม.',
+                            speed: '35.02 กม./วิ',
+                            gravity: '8.87 ม./วิ²',
+                            description: 'ดาวเคราะห์ที่ร้อนที่สุด มีบรรยากาศหนาแน่นและเป็นพิษ'
+                        }
+                    },
+                    {
+                        name: 'โลก',
+                        nameEn: 'Earth',
+                        emoji: '🌍',
+                        x: 160, y: 0, z: 0,
+                        radius: 20,
+                        color: '#4a90e2',
+                        mass: 5.972e24,
+                        orbitalRadius: 160,
+                        orbitalSpeed: 0.03,
+                        angle: Math.PI/2,
+                        info: {
+                            radius: '6,371 กม.',
+                            distance: '149.6 ล้านกม.',
+                            speed: '29.78 กม./วิ',
+                            gravity: '9.81 ม./วิ²',
+                            description: 'ดาวเคราะห์บ้านเกิดของเรา มีบรรยากaศและน้ำที่เหมาะสมต่อชีวิต'
+                        }
+                    },
+                    {
+                        name: 'ดวงจันทร์',
+                        nameEn: 'Moon',
+                        emoji: '🌕',
+                        x: 185, y: 0, z: 0,
+                        radius: 8,
+                        color: '#f5f5dc',
+                        mass: 7.342e22,
+                        orbitalRadius: 25,
+                        orbitalSpeed: 0.1,
+                        angle: 0,
+                        parent: 3,
+                        info: {
+                            radius: '1,737 กม.',
+                            distance: '384,400 กม.',
+                            speed: '1.02 กม./วิ',
+                            gravity: '1.62 ม./วิ²',
+                            description: 'ดาวเทียมธรรมชาติของโลก ควบคุมกระแสน้ำขึ้นน้ำลง'
+                        }
+                    },
+                    {
+                        name: 'ดาวอังคาร',
+                        nameEn: 'Mars',
+                        emoji: '♂️',
+                        x: 220, y: 0, z: 0,
+                        radius: 16,
+                        color: '#e74c3c',
+                        mass: 6.39e23,
+                        orbitalRadius: 220,
+                        orbitalSpeed: 0.025,
+                        angle: Math.PI,
+                        info: {
+                            radius: '3,390 กม.',
+                            distance: '227.9 ล้านกม.',
+                            speed: '24.07 กม./วิ',
+                            gravity: '3.71 ม./วิ²',
+                            description: 'ดาวเคราะห์สีแดง มีขั้วน้ำแข็งและหลักฐานของน้ำในอดีต'
+                        }
+                    },
+                    {
+                        name: 'ดาวพฤหัสบดี',
+                        nameEn: 'Jupiter',
+                        emoji: '♃',
+                        x: 320, y: 0, z: 0,
+                        radius: 35,
+                        color: '#D8CA9D',
+                        mass: 1.898e27,
+                        orbitalRadius: 320,
+                        orbitalSpeed: 0.02,
+                        angle: Math.PI * 1.5,
+                        info: {
+                            radius: '69,911 กม.',
+                            distance: '778.5 ล้านกม.',
+                            speed: '13.07 กม./วิ',
+                            gravity: '24.79 ม./วิ²',
+                            description: 'ดาวเคราะห์ที่ใหญ่ที่สุด เป็นดาวเคราะห์แก๊สยักษ์ มีจุดแดงใหญ่'
+                        }
+                    },
+                    {
+                        name: 'ดาวเสาร์',
+                        nameEn: 'Saturn',
+                        emoji: '♄',
+                        x: 420, y: 0, z: 0,
+                        radius: 30,
+                        color: '#FAD5A5',
+                        mass: 5.683e26,
+                        orbitalRadius: 420,
+                        orbitalSpeed: 0.018,
+                        angle: 0,
+                        info: {
+                            radius: '58,232 กม.',
+                            distance: '1.432 พันล้านกม.',
+                            speed: '9.69 กม./วิ',
+                            gravity: '10.44 ม./วิ²',
+                            description: 'ดาวเคราะห์ที่มีวงแหวนสวยงาม ความหนาแน่นต่ำกว่าน้ำ'
+                        }
+                    },
+                    {
+                        name: 'ดาวยูเรนัส',
+                        nameEn: 'Uranus',
+                        emoji: '♅',
+                        x: 520, y: 0, z: 0,
+                        radius: 25,
+                        color: '#4FD0E7',
+                        mass: 8.681e25,
+                        orbitalRadius: 520,
+                        orbitalSpeed: 0.015,
+                        angle: Math.PI/3,
+                        info: {
+                            radius: '25,362 กม.',
+                            distance: '2.867 พันล้านกม.',
+                            speed: '6.81 กม./วิ',
+                            gravity: '8.69 ม./วิ²',
+                            description: 'ดาวเคราะห์น้ำแข็ง หมุนตัวในแนวนอน มีสีฟ้าเขียว'
+                        }
+                    },
+                    {
+                        name: 'ดาวเนปจูน',
+                        nameEn: 'Neptune',
+                        emoji: '♆',
+                        x: 620, y: 0, z: 0,
+                        radius: 24,
+                        color: '#4B70DD',
+                        mass: 1.024e26,
+                        orbitalRadius: 620,
+                        orbitalSpeed: 0.012,
+                        angle: Math.PI * 2/3,
+                        info: {
+                            radius: '24,622 กม.',
+                            distance: '4.515 พันล้านกม.',
+                            speed: '5.43 กม./วิ',
+                            gravity: '11.15 ม./วิ²',
+                            description: 'ดาวเคราะห์ที่ไกลที่สุด มีลมแรงที่สุดในระบบสุริยะ'
+                        }
+                    }
+                ];
+            }
+            
+            setupEventListeners() {
+                // Keyboard events
+                window.addEventListener('keydown', (e) => {
+                    this.keys[e.code] = true;
+                    
+                    if (e.code === 'Tab') {
+                        e.preventDefault();
+                        this.switchTarget();
+                    }
+                    
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        this.toggleInfoPanel();
+                    }
+                    
+                    if (e.code === 'KeyR') {
+                        this.resetCamera();
+                    }
+                });
+                
+                window.addEventListener('keyup', (e) => {
+                    this.keys[e.code] = false;
+                });
+                
+                // Mouse events
+                this.canvas.addEventListener('mousedown', (e) => {
+                    this.isMouseDown = true;
+                    this.mouseX = e.clientX;
+                    this.mouseY = e.clientY;
+                });
+                
+                this.canvas.addEventListener('mouseup', () => {
+                    this.isMouseDown = false;
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (this.isMouseDown && this.viewMode === 'free') {
+                        const deltaX = e.clientX - this.mouseX;
+                        const deltaY = e.clientY - this.mouseY;
+                        
+                        this.camera.rotY += deltaX * 0.01;
+                        this.camera.rotX += deltaY * 0.01;
+                        
+                        this.camera.rotX = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.camera.rotX));
+                    }
+                    
+                    this.mouseX = e.clientX;
+                    this.mouseY = e.clientY;
+                });
+                
+                // Home button
+                document.getElementById('homeButton').addEventListener('click', () => {
+                    this.returnToHome();
+                });
+                
+                // View control buttons
+                const viewButtons = document.querySelectorAll('.view-button:not(.home-button)');
+                viewButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        viewButtons.forEach(b => b.classList.remove('active'));
+                        button.classList.add('active');
+                        this.viewMode = button.dataset.view;
+                        this.setViewMode(this.viewMode);
+                    });
+                });
+                
+                // Touch events
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.isMouseDown = true;
+                    this.mouseX = touch.clientX;
+                    this.mouseY = touch.clientY;
+                });
+                
+                this.canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.isMouseDown = false;
+                });
+                
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    if (this.isMouseDown && e.touches.length === 1 && this.viewMode === 'free') {
+                        const touch = e.touches[0];
+                        const deltaX = touch.clientX - this.mouseX;
+                        const deltaY = touch.clientY - this.mouseY;
+                        
+                        this.camera.rotY += deltaX * 0.01;
+                        this.camera.rotX += deltaY * 0.01;
+                        
+                        this.camera.rotX = Math.max(-Math.PI/2, Math.min(Math.PI/2, this.camera.rotX));
+                        
+                        this.mouseX = touch.clientX;
+                        this.mouseY = touch.clientY;
+                    }
+                });
+                
+                window.addEventListener('resize', () => {
+                    this.setupCanvas();
+                });
+            }
+            
+            setViewMode(mode) {
+                const target = this.bodies[this.currentTarget];
+                
+                switch(mode) {
+                    case 'free':
+                        // Free camera movement
+                        break;
+                    case 'top':
+                        this.camera.x = target.x;
+                        this.camera.y = 800;
+                        this.camera.z = target.z;
+                        this.camera.rotX = -Math.PI/2;
+                        this.camera.rotY = 0;
+                        break;
+                    case 'side':
+                        this.camera.x = target.x - 300;
+                        this.camera.y = 0;
+                        this.camera.z = target.z;
+                        this.camera.rotX = 0;
+                        this.camera.rotY = Math.PI/2;
+                        break;
+                    case 'follow':
+                        this.camera.x = target.x - 150;
+                        this.camera.y = target.y + 50;
+                        this.camera.z = target.z - 150;
+                        break;
+                }
+            }
+            
+            updatePhysics() {
+                // Update time based on game mode
+                let timeMultiplier = 0.016;
+                if (this.gameMode === 'orbit' && this.orbitSpeed) {
+                    timeMultiplier *= this.orbitSpeed;
+                }
+                this.time += timeMultiplier;
+                
+                // Update orbital positions
+                this.bodies.forEach((body, index) => {
+                    if (body.orbitalRadius > 0) {
+                        let speedMultiplier = 1;
+                        if (this.gameMode === 'orbit' && this.orbitSpeed) {
+                            speedMultiplier = this.orbitSpeed;
+                        }
+                        
+                        body.angle += body.orbitalSpeed * speedMultiplier;
+                        
+                        if (body.parent !== undefined) {
+                            const parent = this.bodies[body.parent];
+                            body.x = parent.x + Math.cos(body.angle) * body.orbitalRadius;
+                            body.z = parent.z + Math.sin(body.angle) * body.orbitalRadius;
+                        } else {
+                            body.x = Math.cos(body.angle) * body.orbitalRadius;
+                            body.z = Math.sin(body.angle) * body.orbitalRadius;
+                        }
+                    }
+                });
+                
+                // Update based on game mode
+                switch(this.gameMode) {
+                    case 'guided':
+                        this.updateGuidedTour();
+                        break;
+                    case 'orbit':
+                        this.updateOrbitMode();
+                        break;
+                    case 'comparison':
+                        this.updateComparisonMode();
+                        break;
+                }
+                
+                // Update camera based on view mode
+                if (this.viewMode === 'follow') {
+                    const target = this.bodies[this.currentTarget];
+                    this.camera.x = target.x - 150;
+                    this.camera.y = target.y + 50;
+                    this.camera.z = target.z - 150;
+                } else if (this.viewMode === 'free' && this.gameMode === 'explorer') {
+                    // Free camera movement (only in explorer mode)
+                    const speed = 5;
+                    
+                    if (this.keys['KeyW']) this.velocity.z -= speed;
+                    if (this.keys['KeyS']) this.velocity.z += speed;
+                    if (this.keys['KeyA']) this.velocity.x -= speed;
+                    if (this.keys['KeyD']) this.velocity.x += speed;
+                    if (this.keys['KeyQ']) this.velocity.y += speed;
+                    if (this.keys['KeyE']) this.velocity.y -= speed;
+                    
+                    if (this.keys['ArrowUp']) this.camera.zoom *= 1.05;
+                    if (this.keys['ArrowDown']) this.camera.zoom *= 0.95;
+                    
+                    this.camera.x += this.velocity.x;
+                    this.camera.y += this.velocity.y;
+                    this.camera.z += this.velocity.z;
+                    
+                    this.velocity.x *= 0.9;
+                    this.velocity.y *= 0.9;
+                    this.velocity.z *= 0.9;
+                }
+                
+                this.camera.zoom = Math.max(0.1, Math.min(5, this.camera.zoom));
+            }
+            
+            project3D(x, y, z) {
+                const dx = x - this.camera.x;
+                const dy = y - this.camera.y;
+                const dz = z - this.camera.z;
+                
+                const cosY = Math.cos(this.camera.rotY);
+                const sinY = Math.sin(this.camera.rotY);
+                const x1 = dx * cosY - dz * sinY;
+                const z1 = dx * sinY + dz * cosY;
+                
+                const cosX = Math.cos(this.camera.rotX);
+                const sinX = Math.sin(this.camera.rotX);
+                const y1 = dy * cosX - z1 * sinX;
+                const z2 = dy * sinX + z1 * cosX;
+                
+                const distance = z2 + 500;
+                if (distance <= 0) return null;
+                
+                const scale = (400 * this.camera.zoom) / distance;
+                const screenX = this.canvas.width / 2 + x1 * scale;
+                const screenY = this.canvas.height / 2 - y1 * scale;
+                
+                return {
+                    x: screenX,
+                    y: screenY,
+                    scale: scale,
+                    distance: Math.sqrt(dx*dx + dy*dy + dz*dz)
+                };
+            }
+            
+            render() {
+                const gradient = this.ctx.createRadialGradient(
+                    this.canvas.width/2, this.canvas.height/2, 0,
+                    this.canvas.width/2, this.canvas.height/2, this.canvas.width
+                );
+                gradient.addColorStop(0, '#1a1a2e');
+                gradient.addColorStop(1, '#0c0c0c');
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.drawStars();
+                this.drawOrbitalPaths();
+                
+                const sortedBodies = [...this.bodies].sort((a, b) => {
+                    const projA = this.project3D(a.x, a.y, a.z);
+                    const projB = this.project3D(b.x, b.y, b.z);
+                    return (projB ? projB.distance : Infinity) - (projA ? projA.distance : Infinity);
+                });
+                
+                sortedBodies.forEach((body, originalIndex) => {
+                    const bodyIndex = this.bodies.indexOf(body);
+                    this.drawBody(body, bodyIndex === this.currentTarget);
+                });
+                
+                this.updateUI();
+            }
+            
+            drawStars() {
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                for (let i = 0; i < 300; i++) {
+                    const x = (i * 7919) % this.canvas.width;
+                    const y = (i * 4441) % this.canvas.height;
+                    const size = (i % 3) + 1;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+            
+            drawOrbitalPaths() {
+                // Don't show orbital paths in comparison mode
+                if (this.gameMode === 'comparison') return;
+                
+                // Check if orbital paths should be shown
+                if (this.gameMode === 'orbit' && !this.showOrbitalPaths) return;
+                
+                this.bodies.forEach(body => {
+                    if (body.orbitalRadius > 0) {
+                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                        this.ctx.lineWidth = 1;
+                        this.ctx.setLineDash([5, 5]);
+                        this.ctx.beginPath();
+                        
+                        const centerX = body.parent !== undefined ? this.bodies[body.parent].x : 0;
+                        const centerZ = body.parent !== undefined ? this.bodies[body.parent].z : 0;
+                        
+                        for (let angle = 0; angle <= Math.PI * 2; angle += 0.1) {
+                            const x = centerX + Math.cos(angle) * body.orbitalRadius;
+                            const z = centerZ + Math.sin(angle) * body.orbitalRadius;
+                            const proj = this.project3D(x, 0, z);
+                            
+                            if (proj) {
+                                if (angle === 0) {
+                                    this.ctx.moveTo(proj.x, proj.y);
+                                } else {
+                                    this.ctx.lineTo(proj.x, proj.y);
+                                }
+                            }
+                        }
+                        
+                        this.ctx.stroke();
+                        this.ctx.setLineDash([]);
+                    }
+                });
+            }
+            
+            drawBody(body, isTarget) {
+                const proj = this.project3D(body.x, body.y, body.z);
+                if (!proj) return;
+                
+                // Use display radius for comparison mode
+                let radius = body.radius;
+                if (this.gameMode === 'comparison' && body.displayRadius !== undefined) {
+                    radius = body.displayRadius;
+                }
+                
+                const size = radius * proj.scale * 0.1;
+                
+                if (isTarget) {
+                    const glowGradient = this.ctx.createRadialGradient(
+                        proj.x, proj.y, size,
+                        proj.x, proj.y, size * 2
+                    );
+                    glowGradient.addColorStop(0, body.color + '40');
+                    glowGradient.addColorStop(1, 'transparent');
+                    
+                    this.ctx.fillStyle = glowGradient;
+                    this.ctx.beginPath();
+                    this.ctx.arc(proj.x, proj.y, size * 2, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+                
+                const bodyGradient = this.ctx.createRadialGradient(
+                    proj.x - size * 0.3, proj.y - size * 0.3, 0,
+                    proj.x, proj.y, size
+                );
+                bodyGradient.addColorStop(0, this.lightenColor(body.color, 40));
+                bodyGradient.addColorStop(1, body.color);
+                
+                this.ctx.fillStyle = bodyGradient;
+                this.ctx.beginPath();
+                this.ctx.arc(proj.x, proj.y, size, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Draw Saturn's rings
+                if (body.nameEn === 'Saturn' && size > 10) {
+                    this.ctx.strokeStyle = 'rgba(250, 213, 165, 0.6)';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(proj.x, proj.y, size * 1.5, size * 0.3, 0, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                }
+                
+                if (size > 15) {
+                    this.ctx.font = `${size * 0.6}px Arial`;
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(body.emoji, proj.x, proj.y);
+                }
+                
+                // Always show names in comparison mode
+                if (proj.distance < 1500 || this.gameMode === 'comparison') {
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = '14px Kanit';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(body.name, proj.x, proj.y + size + 20);
+                    
+                    if (this.gameMode !== 'comparison') {
+                        this.ctx.font = '12px Kanit';
+                        this.ctx.fillStyle = '#bdc3c7';
+                        this.ctx.fillText(`${Math.round(proj.distance)} หน่วย`, proj.x, proj.y + size + 35);
+                    }
+                }
+            }
+            
+            lightenColor(color, percent) {
+                const num = parseInt(color.replace("#", ""), 16);
+                const amt = Math.round(2.55 * percent);
+                const R = (num >> 16) + amt;
+                const G = (num >> 8 & 0x00FF) + amt;
+                const B = (num & 0x0000FF) + amt;
+                return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                    (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+            }
+            
+            updateUI() {
+                const target = this.bodies[this.currentTarget];
+                const distance = Math.sqrt(
+                    Math.pow(target.x - this.camera.x, 2) +
+                    Math.pow(target.y - this.camera.y, 2) +
+                    Math.pow(target.z - this.camera.z, 2)
+                );
+                
+                const speed = Math.sqrt(
+                    this.velocity.x * this.velocity.x +
+                    this.velocity.y * this.velocity.y +
+                    this.velocity.z * this.velocity.z
+                );
+                
+                document.getElementById('posX').textContent = Math.round(this.camera.x);
+                document.getElementById('posY').textContent = Math.round(this.camera.y);
+                document.getElementById('posZ').textContent = Math.round(this.camera.z);
+                document.getElementById('velocity').textContent = Math.round(speed * 10) / 10;
+                document.getElementById('distance').textContent = Math.round(distance);
+                document.getElementById('currentTarget').textContent = target.name;
+                
+                this.updateInfoPanel();
+            }
+            
+            updateInfoPanel() {
+                const target = this.bodies[this.currentTarget];
+                const infoHtml = `
+                    <div class="planet-info">
+                        <div class="planet-name">${target.emoji} ${target.name} (${target.nameEn})</div>
+                        <div class="planet-detail">
+                            <span class="label">รัศมี:</span>
+                            <span class="value">${target.info.radius}</span>
+                        </div>
+                        <div class="planet-detail">
+                            <span class="label">ระยะจากดวงอาทิตย์:</span>
+                            <span class="value">${target.info.distance}</span>
+                        </div>
+                        <div class="planet-detail">
+                            <span class="label">ความเร็วโคจร:</span>
+                            <span class="value">${target.info.speed}</span>
+                        </div>
+                        <div class="planet-detail">
+                            <span class="label">แรงโน้มถ่วง:</span>
+                            <span class="value">${target.info.gravity}</span>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 13px; color: #ecf0f1; line-height: 1.4;">
+                            ${target.info.description}
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('planetInfo').innerHTML = infoHtml;
+            }
+            
+            switchTarget() {
+                this.currentTarget = (this.currentTarget + 1) % this.bodies.length;
+                
+                if (this.viewMode !== 'free') {
+                    this.setViewMode(this.viewMode);
+                }
+            }
+            
+            resetCamera() {
+                this.camera.x = 0;
+                this.camera.y = 0;
+                this.camera.z = 1000;
+                this.camera.rotX = 0;
+                this.camera.rotY = 0;
+                this.camera.zoom = 1;
+                this.velocity = { x: 0, y: 0, z: 0 };
+            }
+            
+            toggleInfoPanel() {
+                const panel = document.getElementById('infoPanel');
+                panel.classList.toggle('hidden');
+            }
+            
+            setupExplorerMode() {
+                // Show all standard controls
+                document.getElementById('infoPanel').classList.remove('hidden');
+                document.getElementById('creatorPanel').classList.add('hidden');
+                document.getElementById('guidedPanel').classList.add('hidden');
+                document.getElementById('orbitPanel').classList.add('hidden');
+                document.getElementById('comparisonPanel').classList.add('hidden');
+            }
+            
+            setupGuidedTourMode() {
+                // Initialize guided tour
+                this.tourIndex = 0;
+                this.tourPaused = false;
+                this.tourSpeed = 3000; // 3 seconds per planet
+                this.tourTimer = 0;
+                this.currentTarget = 0;
+                
+                // Show guided tour panel
+                document.getElementById('guidedPanel').classList.remove('hidden');
+                document.getElementById('infoPanel').classList.remove('hidden');
+                document.getElementById('creatorPanel').classList.add('hidden');
+                document.getElementById('orbitPanel').classList.add('hidden');
+                document.getElementById('comparisonPanel').classList.add('hidden');
+                
+                // Start tour
+                this.startGuidedTour();
+            }
+            
+            startGuidedTour() {
+                this.tourIndex = 0;
+                this.currentTarget = 0;
+                this.setViewMode('follow');
+                this.updateTourInfo();
+            }
+            
+            setupOrbitMode() {
+                // Initialize orbit tracking mode
+                this.orbitSpeed = 1;
+                this.showOrbitalPaths = true;
+                this.orbitFocus = 'system'; // 'system' or specific planet index
+                
+                // Set camera for orbital view
+                this.camera.x = 0;
+                this.camera.y = 600;
+                this.camera.z = 0;
+                this.camera.rotX = -Math.PI/2;
+                this.camera.rotY = 0;
+                this.camera.zoom = 0.8;
+                
+                // Show orbit panel
+                document.getElementById('orbitPanel').classList.remove('hidden');
+                document.getElementById('infoPanel').classList.remove('hidden');
+                document.getElementById('creatorPanel').classList.add('hidden');
+                document.getElementById('guidedPanel').classList.add('hidden');
+                document.getElementById('comparisonPanel').classList.add('hidden');
+            }
+            
+            setupComparisonMode() {
+                // Initialize comparison mode
+                this.comparisonPlanets = [3, 5]; // Earth and Mars by default
+                this.comparisonScale = 1;
+                this.showRealSizes = false;
+                
+                // Set camera for comparison view
+                this.camera.x = 0;
+                this.camera.y = 100;
+                this.camera.z = 400;
+                this.camera.rotX = -Math.PI/8;
+                this.camera.rotY = 0;
+                this.camera.zoom = 1.5;
+                
+                // Show comparison panel
+                document.getElementById('comparisonPanel').classList.remove('hidden');
+                document.getElementById('infoPanel').classList.remove('hidden');
+                document.getElementById('creatorPanel').classList.add('hidden');
+                document.getElementById('guidedPanel').classList.add('hidden');
+                document.getElementById('orbitPanel').classList.add('hidden');
+            }
+            
+            updateGuidedTour() {
+                if (!this.tourPaused) {
+                    this.tourTimer += 16; // 16ms per frame
+                    
+                    if (this.tourTimer >= this.tourSpeed) {
+                        this.tourTimer = 0;
+                        this.tourIndex = (this.tourIndex + 1) % this.bodies.length;
+                        this.currentTarget = this.tourIndex;
+                        this.setViewMode('follow');
+                        this.updateTourInfo();
+                    }
+                }
+            }
+            
+            updateTourInfo() {
+                document.getElementById('tourCurrentIndex').textContent = this.tourIndex + 1;
+                document.getElementById('tourTotalPlanets').textContent = this.bodies.length;
+                
+                const progress = ((this.tourIndex + 1) / this.bodies.length) * 100;
+                document.getElementById('tourProgressBar').style.width = progress + '%';
+            }
+            
+            updateOrbitMode() {
+                // Update orbit focus camera
+                if (this.orbitFocus !== 'system' && this.orbitFocus < this.bodies.length) {
+                    const target = this.bodies[this.orbitFocus];
+                    this.camera.x = target.x;
+                    this.camera.z = target.z;
+                }
+            }
+            
+            updateComparisonMode() {
+                // Position comparison planets side by side
+                if (this.comparisonPlanets.length >= 2) {
+                    const planet1 = this.bodies[this.comparisonPlanets[0]];
+                    const planet2 = this.bodies[this.comparisonPlanets[1]];
+                    
+                    // Override positions for comparison
+                    planet1.x = -100;
+                    planet1.z = 0;
+                    planet2.x = 100;
+                    planet2.z = 0;
+                    
+                    // Adjust sizes if showing real sizes
+                    if (this.showRealSizes) {
+                        // Calculate real size ratios (simplified)
+                        const realSizes = {
+                            0: 696, 1: 24, 2: 60, 3: 64, 4: 17, 5: 34, 6: 699, 7: 582, 8: 254, 9: 246
+                        };
+                        
+                        planet1.displayRadius = (realSizes[this.comparisonPlanets[0]] || planet1.radius) * 0.1;
+                        planet2.displayRadius = (realSizes[this.comparisonPlanets[1]] || planet2.radius) * 0.1;
+                    } else {
+                        planet1.displayRadius = planet1.radius;
+                        planet2.displayRadius = planet2.radius;
+                    }
+                }
+                
+                this.updateComparisonData();
+            }
+            
+            updateComparisonData() {
+                if (this.comparisonPlanets.length >= 2) {
+                    const planet1 = this.bodies[this.comparisonPlanets[0]];
+                    const planet2 = this.bodies[this.comparisonPlanets[1]];
+                    
+                    const comparisonHtml = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
+                            <div style="text-align: center;">
+                                <div style="color: #f39c12; font-weight: 600;">${planet1.name}</div>
+                                <div>รัศมี: ${planet1.info.radius}</div>
+                                <div>ระยะ: ${planet1.info.distance}</div>
+                                <div>แรงโน้มถ่วง: ${planet1.info.gravity}</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="color: #f39c12; font-weight: 600;">${planet2.name}</div>
+                                <div>รัศมี: ${planet2.info.radius}</div>
+                                <div>ระยะ: ${planet2.info.distance}</div>
+                                <div>แรงโน้มถ่วง: ${planet2.info.gravity}</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(155, 89, 182, 0.3);">
+                            <div style="color: #e74c3c; font-weight: 600; margin-bottom: 8px;">อัตราส่วน:</div>
+                            <div style="font-size: 12px;">
+                                ขนาด: ${(planet1.radius / planet2.radius).toFixed(2)} : 1<br>
+                                มวล: ${(planet1.mass / planet2.mass).toFixed(2)} : 1
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('comparisonData').innerHTML = comparisonHtml;
+                }
+            }
+            
+            setupCreatorMode() {
+                // Show creator panel and hide info panel
+                document.getElementById('creatorPanel').classList.remove('hidden');
+                document.getElementById('infoPanel').classList.add('hidden');
+                
+                // Initialize creator controls
+                this.setupCreatorControls();
+                
+                // Start with just the sun
+                this.bodies = [this.bodies[0]]; // Keep only the sun
+                this.currentTarget = 0;
+                this.camera.z = 1000;
+                
+                // Initialize custom planets array
+                this.customPlanets = [];
+            }
+            
+            setupCreatorControls() {
+                // Range input listeners
+                document.getElementById('planetSize').addEventListener('input', (e) => {
+                    document.getElementById('sizeValue').textContent = e.target.value;
+                });
+                
+                document.getElementById('planetDistance').addEventListener('input', (e) => {
+                    document.getElementById('distanceValue').textContent = e.target.value;
+                });
+                
+                document.getElementById('planetSpeed').addEventListener('input', (e) => {
+                    document.getElementById('speedValue').textContent = e.target.value;
+                });
+                
+                // Add planet button
+                document.getElementById('addPlanetBtn').addEventListener('click', () => {
+                    this.addCustomPlanet();
+                });
+                
+                // Clear all button
+                document.getElementById('clearAllBtn').addEventListener('click', () => {
+                    this.clearAllPlanets();
+                });
+                
+                // Save system button
+                document.getElementById('saveSystemBtn').addEventListener('click', () => {
+                    this.saveCustomSystem();
+                });
+                
+                // Setup other mode controls
+                this.setupGuidedTourControls();
+                this.setupOrbitControls();
+                this.setupComparisonControls();
+            }
+            
+            setupGuidedTourControls() {
+                // Tour control buttons
+                document.getElementById('tourPlayPause').addEventListener('click', () => {
+                    this.tourPaused = !this.tourPaused;
+                    document.getElementById('tourPlayPause').textContent = this.tourPaused ? '▶️ เล่น' : '⏸️ หยุดชั่วคราว';
+                });
+                
+                document.getElementById('tourNext').addEventListener('click', () => {
+                    this.tourIndex = (this.tourIndex + 1) % this.bodies.length;
+                    this.currentTarget = this.tourIndex;
+                    this.setViewMode('follow');
+                    this.updateTourInfo();
+                    this.tourTimer = 0;
+                });
+                
+                document.getElementById('tourPrev').addEventListener('click', () => {
+                    this.tourIndex = (this.tourIndex - 1 + this.bodies.length) % this.bodies.length;
+                    this.currentTarget = this.tourIndex;
+                    this.setViewMode('follow');
+                    this.updateTourInfo();
+                    this.tourTimer = 0;
+                });
+                
+                document.getElementById('tourRestart').addEventListener('click', () => {
+                    this.tourIndex = 0;
+                    this.currentTarget = 0;
+                    this.setViewMode('follow');
+                    this.updateTourInfo();
+                    this.tourTimer = 0;
+                });
+                
+                // Tour speed slider
+                document.getElementById('tourSpeedSlider').addEventListener('input', (e) => {
+                    this.tourSpeed = parseInt(e.target.value);
+                    document.getElementById('tourSpeedValue').textContent = (this.tourSpeed / 1000).toFixed(1) + 's';
+                });
+            }
+            
+            setupOrbitControls() {
+                // Orbit speed control
+                document.getElementById('orbitSpeedSlider').addEventListener('input', (e) => {
+                    this.orbitSpeed = parseFloat(e.target.value);
+                    document.getElementById('orbitSpeedValue').textContent = this.orbitSpeed.toFixed(1) + 'x';
+                });
+                
+                // Orbit pause/resume
+                document.getElementById('orbitPause').addEventListener('click', () => {
+                    this.orbitSpeed = this.orbitSpeed === 0 ? 1 : 0;
+                    document.getElementById('orbitPause').textContent = this.orbitSpeed === 0 ? '▶️ เล่น' : '⏸️ หยุด';
+                    document.getElementById('orbitSpeedSlider').value = this.orbitSpeed;
+                    document.getElementById('orbitSpeedValue').textContent = this.orbitSpeed.toFixed(1) + 'x';
+                });
+                
+                // Orbit reset
+                document.getElementById('orbitReset').addEventListener('click', () => {
+                    this.bodies.forEach(body => {
+                        if (body.orbitalRadius > 0) {
+                            body.angle = Math.random() * Math.PI * 2;
+                        }
+                    });
+                });
+                
+                // View buttons
+                document.getElementById('orbitViewTop').addEventListener('click', () => {
+                    this.camera.x = 0;
+                    this.camera.y = 800;
+                    this.camera.z = 0;
+                    this.camera.rotX = -Math.PI/2;
+                    this.camera.rotY = 0;
+                });
+                
+                document.getElementById('orbitViewSide').addEventListener('click', () => {
+                    this.camera.x = -600;
+                    this.camera.y = 0;
+                    this.camera.z = 0;
+                    this.camera.rotX = 0;
+                    this.camera.rotY = Math.PI/2;
+                });
+                
+                document.getElementById('orbitView3D').addEventListener('click', () => {
+                    this.camera.x = -400;
+                    this.camera.y = 300;
+                    this.camera.z = -400;
+                    this.camera.rotX = -Math.PI/6;
+                    this.camera.rotY = Math.PI/4;
+                });
+                
+                // Orbital paths checkbox
+                document.getElementById('showOrbitalPaths').addEventListener('change', (e) => {
+                    this.showOrbitalPaths = e.target.checked;
+                });
+                
+                // Focus select
+                const focusSelect = document.getElementById('orbitFocusSelect');
+                this.bodies.forEach((body, index) => {
+                    if (index > 0) { // Skip sun
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = body.name;
+                        focusSelect.appendChild(option);
+                    }
+                });
+                
+                focusSelect.addEventListener('change', (e) => {
+                    this.orbitFocus = e.target.value === 'system' ? 'system' : parseInt(e.target.value);
+                });
+            }
+            
+            setupComparisonControls() {
+                // Populate planet selects
+                const select1 = document.getElementById('comparison1Select');
+                const select2 = document.getElementById('comparison2Select');
+                
+                this.bodies.forEach((body, index) => {
+                    const option1 = document.createElement('option');
+                    option1.value = index;
+                    option1.textContent = body.name;
+                    if (index === 3) option1.selected = true; // Earth default
+                    select1.appendChild(option1);
+                    
+                    const option2 = document.createElement('option');
+                    option2.value = index;
+                    option2.textContent = body.name;
+                    if (index === 5) option2.selected = true; // Mars default
+                    select2.appendChild(option2);
+                });
+                
+                select1.addEventListener('change', (e) => {
+                    this.comparisonPlanets[0] = parseInt(e.target.value);
+                    this.updateComparisonData();
+                });
+                
+                select2.addEventListener('change', (e) => {
+                    this.comparisonPlanets[1] = parseInt(e.target.value);
+                    this.updateComparisonData();
+                });
+                
+                // Real sizes checkbox
+                document.getElementById('showRealSizes').addEventListener('change', (e) => {
+                    this.showRealSizes = e.target.checked;
+                });
+                
+                // Zoom control
+                document.getElementById('comparisonZoom').addEventListener('input', (e) => {
+                    this.camera.zoom = parseFloat(e.target.value);
+                    document.getElementById('comparisonZoomValue').textContent = e.target.value + 'x';
+                });
+            }
+            
+            addCustomPlanet() {
+                const name = document.getElementById('planetName').value || `ดาวเคราะห์ ${this.customPlanets.length + 1}`;
+                const color = document.getElementById('planetColor').value;
+                const size = parseInt(document.getElementById('planetSize').value);
+                const distance = parseInt(document.getElementById('planetDistance').value);
+                const speed = parseFloat(document.getElementById('planetSpeed').value);
+                
+                const newPlanet = {
+                    name: name,
+                    nameEn: name,
+                    emoji: '🪐',
+                    x: distance,
+                    y: 0,
+                    z: 0,
+                    radius: size,
+                    color: color,
+                    mass: size * 1e23,
+                    orbitalRadius: distance,
+                    orbitalSpeed: speed,
+                    angle: Math.random() * Math.PI * 2,
+                    info: {
+                        radius: `${size * 100} กม.`,
+                        distance: `${distance * 1000} กม.`,
+                        speed: `${speed * 1000} กม./วิ`,
+                        gravity: `${size * 0.5} ม./วิ²`,
+                        description: 'ดาวเคราะห์ที่สร้างขึ้นโดยผู้เล่น'
+                    }
+                };
+                
+                this.bodies.push(newPlanet);
+                this.customPlanets.push(newPlanet);
+                this.updatePlanetList();
+                
+                // Clear form
+                document.getElementById('planetName').value = '';
+                document.getElementById('planetColor').value = '#4a90e2';
+                document.getElementById('planetSize').value = '20';
+                document.getElementById('planetDistance').value = '300';
+                document.getElementById('planetSpeed').value = '0.02';
+                document.getElementById('sizeValue').textContent = '20';
+                document.getElementById('distanceValue').textContent = '300';
+                document.getElementById('speedValue').textContent = '0.02';
+            }
+            
+            updatePlanetList() {
+                const planetList = document.getElementById('planetList');
+                planetList.innerHTML = '';
+                
+                this.customPlanets.forEach((planet, index) => {
+                    const planetItem = document.createElement('div');
+                    planetItem.className = 'planet-item';
+                    planetItem.innerHTML = `
+                        <div class="planet-item-info">
+                            <div class="planet-item-name">${planet.name}</div>
+                            <div class="planet-item-details">ขนาด: ${planet.radius}, ระยะ: ${planet.orbitalRadius}</div>
+                        </div>
+                        <div class="planet-item-actions">
+                            <button class="planet-item-btn" onclick="game.removePlanet(${index})">ลบ</button>
+                        </div>
+                    `;
+                    planetList.appendChild(planetItem);
+                });
+            }
+            
+            removePlanet(index) {
+                const planetToRemove = this.customPlanets[index];
+                const bodyIndex = this.bodies.indexOf(planetToRemove);
+                
+                if (bodyIndex > -1) {
+                    this.bodies.splice(bodyIndex, 1);
+                }
+                
+                this.customPlanets.splice(index, 1);
+                this.updatePlanetList();
+                
+                // Reset target if needed
+                if (this.currentTarget >= this.bodies.length) {
+                    this.currentTarget = 0;
+                }
+            }
+            
+            clearAllPlanets() {
+                // Keep only the sun
+                this.bodies = [this.bodies[0]];
+                this.customPlanets = [];
+                this.currentTarget = 0;
+                this.updatePlanetList();
+            }
+            
+            saveCustomSystem() {
+                const systemData = {
+                    planets: this.customPlanets.map(planet => ({
+                        name: planet.name,
+                        color: planet.color,
+                        radius: planet.radius,
+                        orbitalRadius: planet.orbitalRadius,
+                        orbitalSpeed: planet.orbitalSpeed
+                    }))
+                };
+                
+                localStorage.setItem('customSolarSystem', JSON.stringify(systemData));
+                alert('บันทึกระบบสุริยะเรียบร้อยแล้ว!');
+            }
+            
+            returnToHome() {
+                // Hide all game UI
+                document.getElementById('creatorPanel').classList.add('hidden');
+                document.getElementById('infoPanel').classList.remove('hidden');
+                
+                // Show start screen
+                document.getElementById('startScreen').classList.remove('hidden');
+                
+                // Reset game state
+                this.bodies = this.initializeBodies();
+                this.currentTarget = 0;
+                this.resetCamera();
+                
+                // Reset view mode selection
+                const viewModes = document.querySelectorAll('.view-mode');
+                viewModes.forEach(m => m.classList.remove('selected'));
+                document.getElementById('startButton').disabled = true;
+            }
+            
+            gameLoop() {
+                this.updatePhysics();
+                this.render();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+        
+        let game;
+        
+        window.addEventListener('load', () => {
+            game = new SolarSystemExplorer();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e6be374400a1c2',t:'MTc1NTA3MjcwMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
